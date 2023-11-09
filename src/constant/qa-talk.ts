@@ -16,7 +16,7 @@ export type ArticleBody =
   // Tag
   | {
       type: "tag";
-      content: QATalkCategory;
+      content: QATalkCategory | `${QATalkCategory}`;
     }
   // H1, H2, H3
   | {
@@ -82,18 +82,31 @@ export type ArticleBody =
 // The utility type `GetArticleBodyByType` is used to get the type of `ArticleBody` by the value of `ArticleBody['type']`.
 export type GetArticleBodyByType<Type = ArticleBody["type"]> =
   Type extends ArticleBody["type"]
-    ? Omit<Extract<ArticleBody, { type: Type }>, "type">
+    ? Omit<
+        Extract<
+          ArticleBody,
+          {
+            type: Type;
+          }
+        >,
+        "type"
+      >
     : never;
 
 export type GetArticleBodyIncludeTypeByType<Type = ArticleBody["type"]> =
   Type extends ArticleBody["type"]
-    ? Extract<ArticleBody, { type: Type }>
+    ? Extract<
+        ArticleBody,
+        {
+          type: Type;
+        }
+      >
     : never;
 
 export interface Article {
   id: string;
   title: string;
-  category: QATalkCategory;
+  category: QATalkCategory | QATalkCategory[keyof QATalkCategory];
   meta: {
     description: string;
     coverImage: string;

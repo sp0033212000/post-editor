@@ -98,7 +98,14 @@ const Drawer = () => {
   } = useFormContext<Article>();
 
   const onSubmit = useCallback<SubmitHandler<Article>>((data) => {
-    console.log(data);
+    const json = JSON.stringify(data, null, 2);
+    // Save to plain text file (txt)
+    const blob = new Blob([json], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${data.id}.txt`;
+    link.click();
   }, []);
 
   return (

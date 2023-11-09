@@ -15,7 +15,9 @@ import { isSet } from "@src/utils";
 
 import Flexbox from "@src/components/common/Flexbox";
 
-export const Tags: React.FC<{ content: QATalkCategory }> = ({ content }) => {
+export const Tags: React.FC<{
+  content: QATalkCategory | `${QATalkCategory}`;
+}> = ({ content }) => {
   return (
     <Flexbox
       as={"div"}

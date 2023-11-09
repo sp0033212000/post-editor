@@ -12,7 +12,19 @@ import {
 } from "react-hook-form";
 import { useToggle, useUpdateEffect } from "react-use";
 
+import { DndContext, DragEndEvent } from "@dnd-kit/core";
+import {
+  restrictToParentElement,
+  restrictToVerticalAxis,
+} from "@dnd-kit/modifiers";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { faFileInvoice } from "@fortawesome/pro-light-svg-icons";
+import { faSortAlt } from "@fortawesome/pro-regular-svg-icons";
 import {
   faPlus,
   faPlusCircle,
@@ -182,11 +194,30 @@ const Drawer = () => {
 };
 
 const Content = () => {
+  const modifiers = [restrictToVerticalAxis, restrictToParentElement];
+
   const { control } = useFormContext<Article>();
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, move } = useFieldArray({
     control,
     name: "body",
   });
+
+  const onDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+
+      if (!over) return;
+      if (active.id !== over.id) {
+        const activeIndex = active.data.current?.sortable?.index;
+        const overIndex = over.data.current?.sortable?.index;
+
+        if (activeIndex !== undefined && overIndex !== undefined) {
+          move(activeIndex, overIndex);
+        }
+      }
+    },
+    [fields],
+  );
 
   return (
     <DrawerSection
@@ -194,9 +225,21 @@ const Content = () => {
       titleRightSide={<BodyCreator append={append} />}
     >
       <div className={"space-y-2"}>
-        {fields.map((field, index) => (
-          <BlockFieldBox key={field.id} remove={remove} index={index} />
-        ))}
+        <DndContext modifiers={modifiers} onDragEnd={onDragEnd}>
+          <SortableContext
+            items={fields}
+            strategy={verticalListSortingStrategy}
+          >
+            {fields.map((field, index) => (
+              <BlockFieldBox
+                key={field.id}
+                id={field.id}
+                remove={remove}
+                index={index}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
       </div>
     </DrawerSection>
   );
@@ -517,17 +560,48 @@ const BlockFieldBox: React.FC<
   PropsWithChildren<{
     remove: UseFieldArrayRemove;
     index: number;
+    id: string;
   }>
-> = ({ remove, index }) => {
+> = ({ id, remove, index }) => {
   const { watch } = useFormContext<Article>();
   const bodyType = watch(`body.${index}.type`);
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    setActivatorNodeRef,
+  } = useSortable({
+    id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   return (
-    <div className={"relative pb-2 border-b border-gray-4"}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={"relative pb-2 border-b border-gray-4"}
+    >
       <Flexbox align={"center"} className={"mb-1"}>
         <p className={"mr-auto font-bold text-gray-2"}>
           {bodyType.toLocaleUpperCase()}
         </p>
+        <div
+          ref={setActivatorNodeRef}
+          className={"cursor-move"}
+          {...listeners}
+          {...attributes}
+        >
+          <FontAwesomeIcon
+            icon={faSortAlt}
+            className={"mr-2 w-4 h-4 text-indigo"}
+          />
+        </div>
         <button type={"button"} onClick={() => remove(index)}>
           <FontAwesomeIcon icon={faTrash} className={"w-4 h-4 text-indigo"} />
         </button>

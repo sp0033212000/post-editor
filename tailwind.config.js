@@ -68,6 +68,7 @@ module.exports = {
         "fz-8-mobile": ["0.875rem", "1.375rem"],
       },
       spacing: {
+        stretch: "stretch",
         15: "3.75rem",
         130: "32.5rem",
       },

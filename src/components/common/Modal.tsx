@@ -78,7 +78,7 @@ const Modal: React.FC<PropsWithChildren<Props>> = ({
       <Flexbox
         id={"modal-wrapper"}
         className={classNames(
-          "min-h-full h-stretch",
+          "min-h-full h-stretch max-h-screen",
           "transition-opacity duration-500",
           "bg-black bg-opacity-[64%]",
           {
@@ -97,19 +97,18 @@ const Modal: React.FC<PropsWithChildren<Props>> = ({
         }}
         onTransitionEnd={onTransitionEnd}
         onClick={onBackDrop}
+        justify={"center"}
+        align={"center"}
         {...props}
       >
-        <div className={classNames("flex-1 bg-white z-[999]")} />
         <Flexbox
           align={"center"}
           justify={"center"}
-          direction={"column"}
-          id={"modal"}
-          className={classNames(className, "relative", "w-full", "z-50")}
+          className={classNames("overflow-hidden max-h-full h-full", className)}
+          onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
         >
           {children}
         </Flexbox>
-        <div className={classNames("flex-1 bg-white z-[999]")} />
       </Flexbox>
     </Portal>
   );

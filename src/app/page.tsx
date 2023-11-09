@@ -66,6 +66,7 @@ import {
   PostList,
   Tags,
 } from "@src/components/feature/article";
+import { ControllableImageUploadField } from "@src/components/feature/ControllableFields";
 
 export default function Home() {
   const method = useForm<Article>({
@@ -138,7 +139,7 @@ const Drawer = () => {
         )}
       >
         <div className={"flex-1 p-6 overflow-scroll"}>
-          <DrawerSection title={"Meta"} titleRightSide={<MetaReview />}>
+          <DrawerSection title={"Meta"} titleRightSide={<MetaPreview />}>
             <div className={"space-y-4"}>
               <div>
                 <FieldTitle>文章UID</FieldTitle>
@@ -172,10 +173,9 @@ const Drawer = () => {
               </div>
               <div>
                 <FieldTitle>文章封面</FieldTitle>
-                <Input
-                  {...register("meta.coverImage", { required: true })}
-                  error={errors["meta"]?.["coverImage"]}
-                  placeholder={"https://..."}
+                <ControllableImageUploadField
+                  control={control}
+                  name={"meta.coverImage"}
                 />
               </div>
             </div>
@@ -344,7 +344,7 @@ const bodyDefaultValueGenerator = <Type = ArticleBody["type"],>(type: Type) => {
   }
 };
 
-const MetaReview: React.FC = () => {
+const MetaPreview: React.FC = () => {
   const [open, toggleOpen] = useToggle(false);
   const { watch } = useFormContext<Article>();
 
@@ -368,7 +368,7 @@ const MetaReview: React.FC = () => {
           className={"w-4 h-4 text-primary"}
         />
       </Flexbox>
-      <Modal show={open} className={"py-24 max-h-screen"}>
+      <Modal show={open} className={"py-24"}>
         <Flexbox
           as={"button"}
           type={"button"}
@@ -400,6 +400,7 @@ const MetaReview: React.FC = () => {
               alt={title}
               fill
               className={"rounded-2xl"}
+              objectFit={"cover"}
             />
           </div>
           <p
@@ -455,7 +456,7 @@ const BodyCreator: React.FC<{
           className={"w-4 h-4 text-primary"}
         />
       </Flexbox>
-      <Modal show={open} className={"py-24 max-h-screen"}>
+      <Modal show={open} className={"py-24"}>
         <Flexbox
           direction={"column"}
           className={
@@ -575,6 +576,7 @@ const BlockFieldBox: React.FC<
     transform,
     transition,
     setActivatorNodeRef,
+    isSorting,
   } = useSortable({
     id,
   });
@@ -609,7 +611,9 @@ const BlockFieldBox: React.FC<
           <FontAwesomeIcon icon={faTrash} className={"w-4 h-4 text-indigo"} />
         </button>
       </Flexbox>
-      <BlockFieldDispatcher type={bodyType} index={index} />
+      {isSorting ? null : (
+        <BlockFieldDispatcher type={bodyType} index={index} />
+      )}
     </div>
   );
 };
@@ -938,14 +942,13 @@ const ImageField: React.FC<{
               </Flexbox>
             </Flexbox>
             <div className={"space-y-1 flex-1"}>
-              <Input
-                error={
-                  errors?.["body"]?.[index]?.["content"]?.[subIndex]?.["src"]
-                }
-                {...register(`body.${index}.content.${subIndex}.src`, {
+              <ControllableImageUploadField
+                control={control}
+                name={`body.${index}.content.${subIndex}.src`}
+                rules={{
                   required: true,
                   validate: urlValidate,
-                })}
+                }}
               />
               <Input
                 error={

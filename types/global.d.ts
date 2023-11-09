@@ -1,81 +1,76 @@
-import { ValidationMap, WeakValidationMap } from 'react'
+import { ValidationMap, WeakValidationMap } from "react";
 
-import { KOODATA_GTAG_REPORT_CONVENTION_CODE } from '@/pages/_document'
+import { KOODATA_GTAG_REPORT_CONVENTION_CODE } from "@/pages/_document";
 
 export declare global {
-  type ElementTagName = keyof JSX.IntrinsicElements
+  type ElementTagName = keyof JSX.IntrinsicElements;
 
   type ElementPropsWithRef<Tag extends ElementTagName> =
-    JSX.IntrinsicElements[Tag]
+    JSX.IntrinsicElements[Tag];
 
   type ElementPropsWithoutRef<Tag extends ElementTagName> = Omit<
     ElementPropsWithRef<Tag>,
-    'ref'
-  >
+    "ref"
+  >;
 
   type ElementProps<Tag extends ElementTagName, ExtractProps = {}> = {
-    as?: Tag
-    conditional?: boolean
+    as?: Tag;
+    conditional?: boolean;
   } & ElementPropsWithoutRef<Tag> &
-    ExtractProps
+    ExtractProps;
 
   interface CustomizeFunctionComponent<P = {}> {
-    propTypes?: WeakValidationMap<P> | undefined
-    contextTypes?: ValidationMap<any> | undefined
-    defaultProps?: Partial<P> | undefined
-    displayName?: string | undefined
+    propTypes?: WeakValidationMap<P> | undefined;
+    contextTypes?: ValidationMap<any> | undefined;
+    defaultProps?: Partial<P> | undefined;
+    displayName?: string | undefined;
   }
 
   interface CustomizeForwardRefRenderFunction {
-    displayName?: string | undefined
+    displayName?: string | undefined;
     // explicit rejected with `never` required due to
     // https://github.com/microsoft/TypeScript/issues/36826
     /**
      * defaultProps are not supported on render functions
      */
-    defaultProps?: never | undefined
+    defaultProps?: never | undefined;
     /**
      * propTypes are not supported on render functions
      */
-    propTypes?: never | undefined
+    propTypes?: never | undefined;
   }
 
   interface Option<Key extends string = string> {
-    key: Key
-    label: string
-    active?: boolean
+    key: Key;
+    label: string;
+    active?: boolean;
   }
 
   interface Window {
-    loadPromise: Promise<void>
+    loadPromise: Promise<void>;
     gtag_report_conversion: (
       sendTo: KOODATA_GTAG_REPORT_CONVENTION_CODE,
-      url?: string
-    ) => void
+      url?: string,
+    ) => void;
     _lt: (
       action: string,
       category: string,
       { type: string },
-      tagIds: Array<string>
-    ) => void
+      tagIds: Array<string>,
+    ) => void;
   }
 
   namespace NodeJS {
     interface ProcessEnv {
-      NEXT_PUBLIC_ENV: 'staging' | 'production' | 'development'
-      NEXT_PUBLIC_MAILER_API_TOKEN: string
-      NEXT_PUBLIC_TAP_PAY_ID: string
-      NEXT_PUBLIC_TAP_PAY_API_KEY: string
-      NEXT_PUBLIC_TAP_PAY_API: string
-      NEXT_PUBLIC_TAP_PAY_MODE: string
+      AWS_S3_REGION: string;
     }
   }
 }
 
-declare module 'axios' {
+declare module "axios" {
   export interface AxiosRequestConfig {
-    disableLoader?: boolean
-    disableAlert?: boolean
-    bypassErrorNames?: Array<string>
+    disableLoader?: boolean;
+    disableAlert?: boolean;
+    bypassErrorNames?: Array<string>;
   }
 }

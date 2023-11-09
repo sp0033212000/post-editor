@@ -127,7 +127,7 @@ export const PostImage: React.FC<{
         <div key={alt} className={classNames("relative w-full")}>
           <div className={"pt-[calc(100%/16*9)]"} />
           <div className={"absolute top-0 left-0 h-full w-full"}>
-            <Image src={src} alt={alt} fill />
+            <Image src={src} alt={alt} fill className={"object-cover"} />
           </div>
         </div>
       ))}

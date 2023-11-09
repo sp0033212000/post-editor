@@ -847,11 +847,21 @@ const BodyField: React.FC<{
               </Flexbox>
               <div className={"space-y-1 flex-1"}>
                 <Input
+                  error={
+                    errors?.["body"]?.[index]?.["hypertext"]?.[subIndex]?.[
+                      "keyword"
+                    ]
+                  }
                   {...register(`body.${index}.hypertext.${subIndex}.keyword`, {
                     required: true,
                   })}
                 />
                 <Input
+                  error={
+                    errors?.["body"]?.[index]?.["hypertext"]?.[subIndex]?.[
+                      "href"
+                    ]
+                  }
                   {...register(`body.${index}.hypertext.${subIndex}.href`, {
                     required: true,
                     validate: urlValidate,
@@ -869,8 +879,11 @@ const BodyField: React.FC<{
 const ImageField: React.FC<{
   index: number;
 }> = ({ index }) => {
-  const { control, register } =
-    useFormContext<ArticleWithSpecificBodyType<"image">>();
+  const {
+    control,
+    register,
+    formState: { errors },
+  } = useFormContext<ArticleWithSpecificBodyType<"image">>();
   const { fields, append, remove } = useFieldArray({
     control,
     name: `body.${index}.content`,
@@ -926,12 +939,18 @@ const ImageField: React.FC<{
             </Flexbox>
             <div className={"space-y-1 flex-1"}>
               <Input
+                error={
+                  errors?.["body"]?.[index]?.["content"]?.[subIndex]?.["src"]
+                }
                 {...register(`body.${index}.content.${subIndex}.src`, {
                   required: true,
                   validate: urlValidate,
                 })}
               />
               <Input
+                error={
+                  errors?.["body"]?.[index]?.["content"]?.[subIndex]?.["alt"]
+                }
                 {...register(`body.${index}.content.${subIndex}.alt`, {
                   required: true,
                 })}
@@ -974,9 +993,11 @@ const CalloutField: React.FC<{
         <div className={"space-y-1"}>
           <div className={"space-y-1 flex-1"}>
             <Input
+              error={errors?.["body"]?.[index]?.["cta"]?.["text"]}
               {...register(`body.${index}.cta.text`, { required: true })}
             />
             <Input
+              error={errors?.["body"]?.[index]?.["cta"]?.["action"]}
               {...register(`body.${index}.cta.action`, {
                 required: true,
                 validate: urlValidate,
@@ -992,8 +1013,11 @@ const CalloutField: React.FC<{
 const HyperlinkField: React.FC<{
   index: number;
 }> = ({ index }) => {
-  const { control, register } =
-    useFormContext<ArticleWithSpecificBodyType<"hyperlink">>();
+  const {
+    control,
+    register,
+    formState: { errors },
+  } = useFormContext<ArticleWithSpecificBodyType<"hyperlink">>();
   const { fields, append, remove } = useFieldArray({
     name: `body.${index}.content`,
     control,
@@ -1050,11 +1074,17 @@ const HyperlinkField: React.FC<{
             </Flexbox>
             <div className={"space-y-1 flex-1"}>
               <Input
+                error={
+                  errors?.["body"]?.[index]?.["content"]?.[subIndex]?.["title"]
+                }
                 {...register(`body.${index}.content.${subIndex}.title`, {
                   required: true,
                 })}
               />
               <Input
+                error={
+                  errors?.["body"]?.[index]?.["content"]?.[subIndex]?.["href"]
+                }
                 {...register(`body.${index}.content.${subIndex}.href`, {
                   required: true,
                   validate: urlValidate,

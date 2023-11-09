@@ -37,7 +37,10 @@ import classNames from "classnames";
 import Image from "next/image";
 import { UseFieldArrayAppend } from "react-hook-form/dist/types/fieldArray";
 
-import { stringOfArrayRequiredValidate } from "@src/utils/validation";
+import {
+  stringOfArrayRequiredValidate,
+  urlValidate,
+} from "@src/utils/validation";
 
 import {
   Article,
@@ -844,10 +847,15 @@ const BodyField: React.FC<{
               </Flexbox>
               <div className={"space-y-1 flex-1"}>
                 <Input
-                  {...register(`body.${index}.hypertext.${subIndex}.keyword`)}
+                  {...register(`body.${index}.hypertext.${subIndex}.keyword`, {
+                    required: true,
+                  })}
                 />
                 <Input
-                  {...register(`body.${index}.hypertext.${subIndex}.href`)}
+                  {...register(`body.${index}.hypertext.${subIndex}.href`, {
+                    required: true,
+                    validate: urlValidate,
+                  })}
                 />
               </div>
             </Flexbox>
@@ -917,8 +925,17 @@ const ImageField: React.FC<{
               </Flexbox>
             </Flexbox>
             <div className={"space-y-1 flex-1"}>
-              <Input {...register(`body.${index}.content.${subIndex}.src`)} />
-              <Input {...register(`body.${index}.content.${subIndex}.alt`)} />
+              <Input
+                {...register(`body.${index}.content.${subIndex}.src`, {
+                  required: true,
+                  validate: urlValidate,
+                })}
+              />
+              <Input
+                {...register(`body.${index}.content.${subIndex}.alt`, {
+                  required: true,
+                })}
+              />
             </div>
           </Flexbox>
         ))}
@@ -960,7 +977,10 @@ const CalloutField: React.FC<{
               {...register(`body.${index}.cta.text`, { required: true })}
             />
             <Input
-              {...register(`body.${index}.cta.action`, { required: true })}
+              {...register(`body.${index}.cta.action`, {
+                required: true,
+                validate: urlValidate,
+              })}
             />
           </div>
         </div>
@@ -1037,6 +1057,7 @@ const HyperlinkField: React.FC<{
               <Input
                 {...register(`body.${index}.content.${subIndex}.href`, {
                   required: true,
+                  validate: urlValidate,
                 })}
               />
             </div>

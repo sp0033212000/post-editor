@@ -6,3 +6,12 @@ export const stringOfArrayRequiredValidate = (value: Array<string>) => {
 
   return undefined;
 };
+
+export const urlValidate = (value: string) => {
+  const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+  if (!urlRegex.test(value)) {
+    return "Invalid URL";
+  }
+
+  return undefined;
+};

@@ -29,6 +29,8 @@ export const isString = (what: any): what is string => {
 };
 
 export const isEmptyString = (what: string = "") => what.length === 0;
+export const isRestrictedEmptyString = (what: string = "") =>
+  what.trim().length === 0;
 
 export const isNotEmptyString = (what: string = "") => what.length !== 0;
 

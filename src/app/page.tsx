@@ -1,15 +1,16 @@
 "use client";
 
-import React, { PropsWithChildren, useCallback } from "react";
+import React, { PropsWithChildren, useCallback, useState } from "react";
 import {
   FormProvider,
+  SubmitHandler,
   useController,
   useFieldArray,
   UseFieldArrayRemove,
   useForm,
   useFormContext,
 } from "react-hook-form";
-import { useToggle } from "react-use";
+import { useToggle, useUpdateEffect } from "react-use";
 
 import {
   faPlus,
@@ -22,6 +23,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import classNames from "classnames";
 import { UseFieldArrayAppend } from "react-hook-form/dist/types/fieldArray";
 
+import { stringOfArrayRequiredValidate } from "@src/utils/validation";
+
 import {
   Article,
   ArticleBody,
@@ -30,6 +33,7 @@ import {
   QATalkCategory,
   qaTalkCategoryOptions,
 } from "@src/constant";
+import { isRestrictedEmptyString } from "@src/utils";
 
 import { Input, Select } from "@src/components/common/Fields";
 import Flexbox from "@src/components/common/Flexbox";
@@ -90,11 +94,18 @@ const Drawer = () => {
     register,
     control,
     formState: { errors },
+    handleSubmit,
   } = useFormContext<Article>();
+
+  const onSubmit = useCallback<SubmitHandler<Article>>((data) => {
+    console.log(data);
+  }, []);
 
   return (
     <React.Fragment>
       <Flexbox
+        as={"form"}
+        onSubmit={handleSubmit(onSubmit)}
         direction={"column"}
         className={classNames(
           "fixed left-0 top-0",
@@ -180,10 +191,11 @@ const Content = () => {
   );
 };
 
-const DrawerSection: React.FC<PropsWithChildren<{ title: string }>> = ({
-  title,
-  children,
-}) => {
+const DrawerSection: React.FC<
+  PropsWithChildren<{
+    title: string;
+  }>
+> = ({ title, children }) => {
   return (
     <section className={"relative mb-6 last:mb-0 p-4 bg-gray-6 rounded-xl"}>
       <p className={"mb-2 text-fz-4-mobile font-bold"}>{title}</p>
@@ -192,10 +204,11 @@ const DrawerSection: React.FC<PropsWithChildren<{ title: string }>> = ({
   );
 };
 
-const FieldTitle: React.FC<PropsWithChildren<{ isRequired?: boolean }>> = ({
-  children,
-  isRequired = true,
-}) => {
+const FieldTitle: React.FC<
+  PropsWithChildren<{
+    isRequired?: boolean;
+  }>
+> = ({ children, isRequired = true }) => {
   return (
     <Flexbox
       as={"p"}
@@ -455,7 +468,9 @@ const BlockFieldDispatcher: React.FC<
   }
 };
 
-const TagField: React.FC<{ index: number }> = ({ index }) => {
+const TagField: React.FC<{
+  index: number;
+}> = ({ index }) => {
   const { control } = useFormContext<Article>();
 
   return (
@@ -475,7 +490,14 @@ const ArrayStringField: React.FC<{
   title?: string;
   value: Array<string>;
   onChange: (value: Array<string>) => void;
+  error: unknown;
 }> = ({ title = "Content", value, onChange }) => {
+  const [innerValue, setInnerValue] = useState<Array<string>>(value);
+
+  useUpdateEffect(() => {
+    onChange(innerValue);
+  }, [innerValue]);
+
   const append = useCallback(() => {
     onChange([...value, "這是第N行"]);
   }, [value]);
@@ -484,24 +506,25 @@ const ArrayStringField: React.FC<{
     (event) => {
       const index = event.currentTarget.dataset.index;
       if (!index) return;
-      onChange(value.filter((_, i) => i !== Number(index)));
+
+      setInnerValue((prev) => prev.filter((_, i) => i !== Number(index)));
     },
-    [value],
+    [],
   );
 
   const onSubValueChange = useCallback<
     React.ChangeEventHandler<HTMLInputElement>
-  >(
-    (event) => {
-      const subValue = event.currentTarget.value;
-      const index = event.currentTarget.dataset.index;
-      if (!index) return;
-      onChange(
-        value.map((heading, i) => (i === Number(index) ? subValue : heading)),
-      );
-    },
-    [value],
-  );
+  >((event) => {
+    const subValue = event.currentTarget.value;
+    const index = event.currentTarget.dataset.index;
+    if (!index) return;
+
+    setInnerValue((prev) => {
+      const next = [...prev];
+      next[Number(index)] = subValue;
+      return next;
+    });
+  }, []);
 
   return (
     <div>
@@ -517,13 +540,14 @@ const ArrayStringField: React.FC<{
         </Flexbox>
       </FieldTitle>
       <div className={"space-y-2"}>
-        {value.map((heading, index) => (
-          <Flexbox align={"center"} key={index} className={"w-full"}>
+        {value.map((text, index) => (
+          <Flexbox align={"center"} key={`text-${index}`} className={"w-full"}>
             <div className={"flex-1"}>
               <Input
-                value={heading}
+                value={text}
                 data-index={index}
                 onChange={onSubValueChange}
+                error={isRestrictedEmptyString(text) ? "Required" : undefined}
               />
             </div>
             {value.length > 1 && (
@@ -547,32 +571,48 @@ const ArrayStringField: React.FC<{
   );
 };
 
-const HeadingField: React.FC<{ index: number }> = ({ index }) => {
+const HeadingField: React.FC<{
+  index: number;
+}> = ({ index }) => {
   const { control } =
     useFormContext<ArticleWithSpecificBodyType<"h1" | "h2" | "h3">>();
   const {
     field: { value, onChange },
+    formState: { errors },
   } = useController({
     name: `body.${index}.content`,
     control,
+    rules: {
+      validate: stringOfArrayRequiredValidate,
+    },
   });
 
-  return <ArrayStringField value={value} onChange={onChange} />;
+  const error = errors?.["body"]?.[index]?.["content"];
+
+  return <ArrayStringField value={value} onChange={onChange} error={error} />;
 };
 
-const BodyField: React.FC<{ index: number }> = ({ index }) => {
+const BodyField: React.FC<{
+  index: number;
+}> = ({ index }) => {
   const { control, register } =
     useFormContext<ArticleWithSpecificBodyType<"body">>();
   const {
     field: { value, onChange },
+    formState: { errors },
   } = useController({
     name: `body.${index}.content`,
     control,
+    rules: {
+      validate: stringOfArrayRequiredValidate,
+    },
   });
   const { fields, append, remove } = useFieldArray({
     control,
     name: `body.${index}.hypertext`,
   });
+
+  const contentError = errors?.["body"]?.[index]?.["content"];
 
   const onAppendClick = useCallback(() => {
     append({ keyword: "這是關鍵字", href: "https://..." });
@@ -589,7 +629,11 @@ const BodyField: React.FC<{ index: number }> = ({ index }) => {
 
   return (
     <div className={"space-y-2"}>
-      <ArrayStringField value={value} onChange={onChange} />
+      <ArrayStringField
+        value={value}
+        onChange={onChange}
+        error={contentError}
+      />
       <div>
         <FieldTitle isRequired={false}>
           Hypertext{" "}
@@ -640,7 +684,9 @@ const BodyField: React.FC<{ index: number }> = ({ index }) => {
   );
 };
 
-const ImageField: React.FC<{ index: number }> = ({ index }) => {
+const ImageField: React.FC<{
+  index: number;
+}> = ({ index }) => {
   const { control, register } =
     useFormContext<ArticleWithSpecificBodyType<"image">>();
   const { fields, append, remove } = useFieldArray({
@@ -707,19 +753,31 @@ const ImageField: React.FC<{ index: number }> = ({ index }) => {
   );
 };
 
-const CalloutField: React.FC<{ index: number }> = ({ index }) => {
+const CalloutField: React.FC<{
+  index: number;
+}> = ({ index }) => {
   const { control, register } =
     useFormContext<ArticleWithSpecificBodyType<"callout">>();
   const {
     field: { value, onChange },
+    formState: { errors },
   } = useController({
     name: `body.${index}.content`,
     control,
+    rules: {
+      validate: stringOfArrayRequiredValidate,
+    },
   });
+
+  const contentError = errors?.["body"]?.[index]?.["content"];
 
   return (
     <div className={"space-y-2"}>
-      <ArrayStringField value={value} onChange={onChange} />
+      <ArrayStringField
+        value={value}
+        onChange={onChange}
+        error={contentError}
+      />
       <div>
         <FieldTitle>Call to action</FieldTitle>
         <div className={"space-y-1"}>
@@ -737,7 +795,9 @@ const CalloutField: React.FC<{ index: number }> = ({ index }) => {
   );
 };
 
-const HyperlinkField: React.FC<{ index: number }> = ({ index }) => {
+const HyperlinkField: React.FC<{
+  index: number;
+}> = ({ index }) => {
   const { control, register } =
     useFormContext<ArticleWithSpecificBodyType<"hyperlink">>();
   const { fields, append, remove } = useFieldArray({
@@ -813,22 +873,32 @@ const HyperlinkField: React.FC<{ index: number }> = ({ index }) => {
   );
 };
 
-const PostListField: React.FC<{ index: number }> = ({ index }) => {
+const PostListField: React.FC<{
+  index: number;
+}> = ({ index }) => {
   const { control } =
     useFormContext<ArticleWithSpecificBodyType<"list-decimal" | "list-dot">>();
   const {
     field: { value, onChange },
+    formState: { errors },
   } = useController({
     name: `body.${index}.content`,
     control,
+    rules: {
+      validate: stringOfArrayRequiredValidate,
+    },
   });
 
-  return <ArrayStringField value={value} onChange={onChange} />;
+  const contentError = errors?.["body"]?.[index]?.["content"];
+
+  return (
+    <ArrayStringField value={value} onChange={onChange} error={contentError} />
+  );
 };
 
-const ComponentDispatcher: React.FC<{ body: Article["body"][number] }> = ({
-  body,
-}) => {
+const ComponentDispatcher: React.FC<{
+  body: Article["body"][number];
+}> = ({ body }) => {
   switch (body.type) {
     case "body":
       return <Body hypertext={body.hypertext} content={body.content} />;

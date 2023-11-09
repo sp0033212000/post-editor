@@ -12,6 +12,7 @@ import {
 } from "react-hook-form";
 import { useToggle, useUpdateEffect } from "react-use";
 
+import { faFileInvoice } from "@fortawesome/pro-light-svg-icons";
 import {
   faPlus,
   faPlusCircle,
@@ -21,6 +22,7 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import classNames from "classnames";
+import Image from "next/image";
 import { UseFieldArrayAppend } from "react-hook-form/dist/types/fieldArray";
 
 import { stringOfArrayRequiredValidate } from "@src/utils/validation";
@@ -121,7 +123,7 @@ const Drawer = () => {
         )}
       >
         <div className={"flex-1 p-6 overflow-scroll"}>
-          <DrawerSection title={"Meta"}>
+          <DrawerSection title={"Meta"} titleRightSide={<MetaReview />}>
             <div className={"space-y-4"}>
               <div>
                 <FieldTitle>文章UID</FieldTitle>
@@ -187,8 +189,10 @@ const Content = () => {
   });
 
   return (
-    <DrawerSection title={"Content"}>
-      <BodyCreator append={append} />
+    <DrawerSection
+      title={"Content"}
+      titleRightSide={<BodyCreator append={append} />}
+    >
       <div className={"space-y-2"}>
         {fields.map((field, index) => (
           <BlockFieldBox key={field.id} remove={remove} index={index} />
@@ -201,11 +205,19 @@ const Content = () => {
 const DrawerSection: React.FC<
   PropsWithChildren<{
     title: string;
+    titleRightSide?: React.ReactNode;
   }>
-> = ({ title, children }) => {
+> = ({ title, titleRightSide, children }) => {
   return (
     <section className={"relative mb-6 last:mb-0 p-4 bg-gray-6 rounded-xl"}>
-      <p className={"mb-2 text-fz-4-mobile font-bold"}>{title}</p>
+      <Flexbox
+        as={"p"}
+        align={"center"}
+        className={"mb-2 text-fz-4-mobile font-bold"}
+      >
+        {title}
+        {titleRightSide}
+      </Flexbox>
       {children}
     </section>
   );
@@ -286,6 +298,87 @@ const bodyDefaultValueGenerator = <Type = ArticleBody["type"],>(type: Type) => {
   }
 };
 
+const MetaReview: React.FC = () => {
+  const [open, toggleOpen] = useToggle(false);
+  const { watch } = useFormContext<Article>();
+
+  const [title, meta] = watch(["title", "meta"], {
+    title: "",
+    meta: { description: "", coverImage: "" },
+  });
+
+  return (
+    <React.Fragment>
+      <Flexbox
+        as={"button"}
+        type={"button"}
+        align={"center"}
+        justify={"center"}
+        className={"ml-auto w-4 h-4"}
+        onClick={toggleOpen}
+      >
+        <FontAwesomeIcon
+          icon={faFileInvoice}
+          className={"w-4 h-4 text-primary"}
+        />
+      </Flexbox>
+      <Modal show={open} className={"py-24 max-h-screen"}>
+        <Flexbox
+          as={"button"}
+          type={"button"}
+          align={"center"}
+          justify={"center"}
+          className={"absolute right-6 top-6"}
+          onClick={toggleOpen}
+        >
+          <FontAwesomeIcon
+            icon={faTimesCircle}
+            className={"w-8 h-8 text-primary"}
+          />
+        </Flexbox>
+        <div
+          className={classNames(
+            "block",
+            "mr-4 last:mr-0 md:mr-6",
+            "p-6 md:p-10",
+            "w-130",
+            "bg-white",
+            "rounded-3xl border border-gray-4",
+            "flex-shrink-0",
+          )}
+        >
+          <div className={"relative w-full"}>
+            <div className={"pt-[calc(100%/220*124)]"} />
+            <Image
+              src={meta.coverImage}
+              alt={title}
+              fill
+              className={"rounded-2xl"}
+            />
+          </div>
+          <p
+            className={classNames(
+              "mt-4",
+              "text-fz-5-mobile font-bold md:text-fz-5",
+            )}
+          >
+            {title}
+          </p>
+          <p
+            className={classNames(
+              "mt-1 md:mt-2",
+              "text-fz-6-mobile text-gray-2 md:text-fz-6",
+              "whitespace-pre-line",
+            )}
+          >
+            {meta.description}
+          </p>
+        </div>
+      </Modal>
+    </React.Fragment>
+  );
+};
+
 const BodyCreator: React.FC<{
   append: UseFieldArrayAppend<Article, "body">;
 }> = ({ append }) => {
@@ -308,7 +401,7 @@ const BodyCreator: React.FC<{
         type={"button"}
         align={"center"}
         justify={"center"}
-        className={"absolute w-4 h-4 top-[26px] right-4"}
+        className={"ml-auto w-4 h-4"}
         onClick={toggleOpen}
       >
         <FontAwesomeIcon

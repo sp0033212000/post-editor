@@ -1,11 +1,10 @@
-import NextAuth from "next-auth";
+import NextAuth, { NextAuthConfig } from "next-auth";
 
 import GoogleProvider from "next-auth/providers/google";
-import { AuthOptions } from "next-auth/src";
 
 const validMailDomains = ["@hunger.ai", "@hotcakeapp.com", "@method.im"];
 
-export const authOptions: AuthOptions = {
+const authOptions: NextAuthConfig = {
   // Configure one or more authentication providers
   providers: [
     GoogleProvider({
@@ -20,5 +19,7 @@ export const authOptions: AuthOptions = {
     },
   },
 };
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+const { handlers } = NextAuth(authOptions);
+// eslint-disable-next-line import/no-anonymous-default-export
+export const GET = handlers.GET;
+export const POST = handlers.POST;

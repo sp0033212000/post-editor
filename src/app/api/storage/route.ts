@@ -1,14 +1,6 @@
-import { PageConfig } from "next";
-
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
 import { NextRequest, NextResponse } from "next/server";
-
-export const config: PageConfig = {
-  api: {
-    bodyParser: false, // Disallow body parsing, consume as stream
-  },
-};
 
 export interface S3StorageUploadResponse {
   url: string;

@@ -2,11 +2,24 @@ import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
 import { NextRequest, NextResponse } from "next/server";
 
+import {
+  NextAuthInstance,
+  validAuthMailDomains,
+} from "@src/app/api/auth/[...nextauth]/utils";
+
 export interface S3StorageUploadResponse {
   url: string;
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await NextAuthInstance.auth();
+
+  if (
+    !validAuthMailDomains.some((domain) => auth?.user?.email?.endsWith(domain))
+  ) {
+    return NextResponse.json({ success: false }, { status: 403 });
+  }
+
   const data = await req.formData();
   const file = data.get("image") as File | null;
 

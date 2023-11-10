@@ -93,7 +93,10 @@ export default function Home() {
   const body = method.watch("body");
 
   const onSignOutClick = useCallback(async () => {
-    await signOut();
+    await signOut({
+      callbackUrl: "/api/auth/signout",
+      redirect: true,
+    });
   }, []);
 
   useEffect(() => {

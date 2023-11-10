@@ -94,14 +94,14 @@ export default function Home() {
 
   const onSignOutClick = useCallback(async () => {
     await signOut({
-      callbackUrl: "/api/auth/signout",
-      redirect: true,
+      // callbackUrl: "/api/auth/signout",
+      redirect: false,
     });
   }, []);
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      signIn("google");
+      signIn();
     }
   }, [status]);
 

@@ -1,6 +1,11 @@
 "use client";
 
-import React, { PropsWithChildren, useCallback, useState } from "react";
+import React, {
+  PropsWithChildren,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import {
   FormProvider,
   SubmitHandler,
@@ -35,6 +40,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import classNames from "classnames";
 import Image from "next/image";
+import { signIn, signOut, useSession } from "next-auth/react";
 import { UseFieldArrayAppend } from "react-hook-form/dist/types/fieldArray";
 
 import {
@@ -69,6 +75,8 @@ import {
 import { ControllableImageUploadField } from "@src/components/feature/ControllableFields";
 
 export default function Home() {
+  const { status } = useSession();
+
   const method = useForm<Article>({
     defaultValues: {
       id: "",
@@ -84,8 +92,38 @@ export default function Home() {
 
   const body = method.watch("body");
 
+  const onSignOutClick = useCallback(async () => {
+    await signOut();
+  }, []);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      signIn("google");
+    }
+  }, [status]);
+
+  if (status === "loading" || status === "unauthenticated")
+    return (
+      <Flexbox align={"center"} justify={"center"} className={"h-screen"}>
+        Loading...
+      </Flexbox>
+    );
+
   return (
     <FormProvider {...method}>
+      <button
+        type={"button"}
+        onClick={onSignOutClick}
+        className={classNames(
+          "fixed right-6 top-6",
+          "px-4 py-2",
+          "text-fz-8-mobile text-white font-medium rounded",
+          "disabled:bg-opacity-30",
+          "bg-red",
+        )}
+      >
+        登出
+      </button>
       <Drawer />
       <main className={"flex pl-130 w-screen"}>
         <div className={classNames("pt-[4.5rem] lg:pt-[6.25rem] w-full")}>

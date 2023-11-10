@@ -3,6 +3,8 @@ import { Metadata } from "next";
 
 import { Noto_Sans_TC } from "next/font/google";
 
+import NextAuthProvider from "@src/components/feature/NextAuthProvider";
+
 const inter = Noto_Sans_TC({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -25,7 +27,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang={"en"}>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <NextAuthProvider>{children}</NextAuthProvider>
+      </body>
     </html>
   );
 }

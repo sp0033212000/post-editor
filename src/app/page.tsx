@@ -42,7 +42,7 @@ import classNames from "classnames";
 import Image from "next/image";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { UseFieldArrayAppend } from "react-hook-form/dist/types/fieldArray";
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidV4 } from "uuid";
 
 import {
   stringOfArrayRequiredValidate,
@@ -869,8 +869,7 @@ const BodyHypertextField: React.FC<{
     >
   >([]);
 
-  const { control, setError, clearErrors } =
-    useFormContext<ArticleWithSpecificBodyType<"body">>();
+  const { control } = useFormContext<ArticleWithSpecificBodyType<"body">>();
   const {
     field: { value, onChange },
     fieldState: { error },
@@ -892,7 +891,7 @@ const BodyHypertextField: React.FC<{
 
   useEffectOnce(() => {
     setHypertext(
-      value?.map((_) => ({ id: uuidv4(), keyword: "", href: "" })) ?? [],
+      value?.map((_) => ({ id: uuidV4(), keyword: "", href: "" })) ?? [],
     );
   });
 
@@ -901,7 +900,7 @@ const BodyHypertextField: React.FC<{
   }, [hypertext]);
 
   const onAppendClick = useCallback(() => {
-    setHypertext((prev) => [...prev, { id: uuidv4(), keyword: "", href: "" }]);
+    setHypertext((prev) => [...prev, { id: uuidV4(), keyword: "", href: "" }]);
   }, []);
 
   const onRemoveClick = useCallback<React.MouseEventHandler<HTMLButtonElement>>(

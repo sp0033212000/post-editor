@@ -41,11 +41,12 @@ export async function POST(req: NextRequest) {
 
     region: process.env.AWS_REGION!,
   });
-  new PutObjectCommand({
+  const command = new PutObjectCommand({
     Bucket,
     Key,
     Body: fileBuffer,
   });
+  await client.send(command);
 
   const { url, fields } = await createPresignedPost(client, {
     Bucket,

@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
       },
 
-      region: process.env.AWS_REGION!,
+      region: process.env.AWS_S3_REGION!,
     });
     const command = new PutObjectCommand({
       Bucket,

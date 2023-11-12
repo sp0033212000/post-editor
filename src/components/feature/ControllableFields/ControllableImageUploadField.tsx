@@ -1,4 +1,9 @@
-import React, { PropsWithChildren, useCallback } from "react";
+import React, {
+  PropsWithChildren,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { Control, FieldPath, useController } from "react-hook-form";
 import { useToggle } from "react-use";
 
@@ -62,6 +67,8 @@ export const ControllableImageUploadField: Component = ({
     ChangeEventType.TEXT,
     urlValidate,
   );
+  const [processPercentage, setProcessPercentage] = useState(0);
+
   const [open, toggleOpen] = useToggle(false);
 
   const {
@@ -71,6 +78,10 @@ export const ControllableImageUploadField: Component = ({
     name,
     rules,
   });
+
+  useEffect(() => {
+    setProcessPercentage(0);
+  }, [open]);
 
   const onConfirm = useCallback(() => {
     if (isValid) {
@@ -91,35 +102,58 @@ export const ControllableImageUploadField: Component = ({
     <React.Fragment>
       <Modal show={open} onBackDrop={toggleOpen}>
         <div className={"p-12 w-130 bg-white rounded-xl"}>
-          <div className={"mb-6"}>
-            <label
-              htmlFor={"url_input"}
-              className={"block mb-2 text-fz-8-mobile text-gray-2 font-medium"}
-            >
-              圖片網址
-            </label>
-            <Input
-              id={"url_input"}
-              value={url}
-              onChange={onUrlChange}
-              withBorder
-              placeholder={"https://..."}
-              error={isValid ? undefined : "請輸入正確的網址"}
-            />
-          </div>
-          <Flexbox>
-            <Button
-              disabled={!isValid || !url}
-              className={"mr-4 bg-primary"}
-              onClick={onConfirm}
-            >
-              確認
-            </Button>
-            <UploadButton onUploadSuccess={onUploadSuccess} />
-            <Button className={"ml-auto bg-gray-5"} onClick={toggleOpen}>
-              取消
-            </Button>
-          </Flexbox>
+          {processPercentage > 0 ? (
+            <div>
+              <p className={"mb-2 text-fz-8-mobile text-gray-2 font-medium"}>
+                上傳進度
+              </p>
+              <div className={"relative w-full h-2 bg-gray-5 rounded"}>
+                <div
+                  className={
+                    "absolute top-0 left-0 h-full bg-primary rounded transition-[width] duration-500"
+                  }
+                  style={{ width: `${processPercentage}%` }}
+                />
+              </div>
+            </div>
+          ) : (
+            <React.Fragment>
+              <div className={"mb-6"}>
+                <label
+                  htmlFor={"url_input"}
+                  className={
+                    "block mb-2 text-fz-8-mobile text-gray-2 font-medium"
+                  }
+                >
+                  圖片網址
+                </label>
+                <Input
+                  id={"url_input"}
+                  value={url}
+                  onChange={onUrlChange}
+                  withBorder
+                  placeholder={"https://..."}
+                  error={isValid ? undefined : "請輸入正確的網址"}
+                />
+              </div>
+              <Flexbox>
+                <Button
+                  disabled={!isValid || !url}
+                  className={"mr-4 bg-primary"}
+                  onClick={onConfirm}
+                >
+                  確認
+                </Button>
+                <UploadButton
+                  onUploadSuccess={onUploadSuccess}
+                  setProcessPercentage={setProcessPercentage}
+                />
+                <Button className={"ml-auto bg-gray-5"} onClick={toggleOpen}>
+                  取消
+                </Button>
+              </Flexbox>
+            </React.Fragment>
+          )}
         </div>
       </Modal>
       {!value ? (
@@ -153,7 +187,8 @@ const pickFile = () =>
 
 const UploadButton: React.FC<{
   onUploadSuccess: (url: string) => void;
-}> = ({ onUploadSuccess }) => {
+  setProcessPercentage: (percentage: number) => void;
+}> = ({ onUploadSuccess, setProcessPercentage }) => {
   const onUploadClick = useCallback(async () => {
     const file = await pickFile();
     if (!file) return;
@@ -166,10 +201,17 @@ const UploadButton: React.FC<{
         headers: {
           "Content-Type": "multipart/form-data",
         },
+        onUploadProgress: (progressEvent) => {
+          const percentage = Math.round(
+            (progressEvent.loaded * 100) / (progressEvent.total ?? 0),
+          );
+          setProcessPercentage(percentage);
+        },
       },
     );
     onUploadSuccess(data.url);
   }, [onUploadSuccess]);
+
   return (
     <Button className={"bg-orange"} onClick={onUploadClick}>
       上傳圖檔

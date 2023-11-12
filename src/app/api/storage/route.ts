@@ -33,31 +33,38 @@ export async function POST(req: NextRequest) {
   const Bucket = `${process.env.AWS_S3_BUCKET_NAME!}`;
   const Key = `from_editor/${file.name}`;
 
-  const client = new S3Client({
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    },
+  let stage = "uploading";
 
-    region: process.env.AWS_REGION!,
-  });
-  const command = new PutObjectCommand({
-    Bucket,
-    Key,
-    Body: fileBuffer,
-  });
-  await client.send(command);
+  try {
+    const client = new S3Client({
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      },
 
-  const { url, fields } = await createPresignedPost(client, {
-    Bucket,
-    Key,
-    Fields: {
-      type: "public-read",
-    },
-  });
+      region: process.env.AWS_REGION!,
+    });
+    const command = new PutObjectCommand({
+      Bucket,
+      Key,
+      Body: fileBuffer,
+    });
+    await client.send(command);
 
-  return NextResponse.json<S3StorageUploadResponse>(
-    { url: `${url}${fields.key}` },
-    { status: 200 },
-  );
+    stage = "presigning";
+    const { url, fields } = await createPresignedPost(client, {
+      Bucket,
+      Key,
+      Fields: {
+        type: "public-read",
+      },
+    });
+
+    return NextResponse.json<S3StorageUploadResponse>(
+      { url: `${url}${fields.key}` },
+      { status: 200 },
+    );
+  } catch (error) {
+    return NextResponse.json({ success: false, stage, error }, { status: 500 });
+  }
 }

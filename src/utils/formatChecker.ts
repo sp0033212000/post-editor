@@ -34,6 +34,6 @@ export const isRestrictedEmptyString = (what: string = "") =>
 
 export const isNotEmptyString = (what: string = "") => what.length !== 0;
 
-export const isEmptyArray = (what: Array<any>) => what.length === 0;
+export const isEmptyArray = (what: Array<any> = []) => what.length === 0;
 
 export const isNotEmptyArray = (what: Array<any>) => what.length !== 0;

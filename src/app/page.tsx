@@ -15,7 +15,7 @@ import {
   useForm,
   useFormContext,
 } from "react-hook-form";
-import { useToggle, useUpdateEffect } from "react-use";
+import { useEffectOnce, useToggle, useUpdateEffect } from "react-use";
 
 import { DndContext, DragEndEvent } from "@dnd-kit/core";
 import {
@@ -42,6 +42,7 @@ import classNames from "classnames";
 import Image from "next/image";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { UseFieldArrayAppend } from "react-hook-form/dist/types/fieldArray";
+import { v4 as uuidv4 } from "uuid";
 
 import {
   stringOfArrayRequiredValidate,
@@ -52,11 +53,12 @@ import {
   Article,
   ArticleBody,
   ArticleWithSpecificBodyType,
+  GetArticleBodyByType,
   GetArticleBodyIncludeTypeByType,
   QATalkCategory,
   qaTalkCategoryOptions,
 } from "@src/constant";
-import { isRestrictedEmptyString } from "@src/utils";
+import { isEmptyArray, isRestrictedEmptyString } from "@src/utils";
 
 import { Input, Select } from "@src/components/common/Fields";
 import Flexbox from "@src/components/common/Flexbox";
@@ -78,6 +80,7 @@ export default function Home() {
   const { status } = useSession();
 
   const method = useForm<Article>({
+    mode: "all",
     defaultValues: {
       id: "",
       title: "",
@@ -94,7 +97,6 @@ export default function Home() {
 
   const onSignOutClick = useCallback(async () => {
     await signOut({
-      // callbackUrl: "/api/auth/signout",
       redirect: false,
     });
   }, []);
@@ -280,7 +282,9 @@ const Content = () => {
                 id={field.id}
                 remove={remove}
                 index={index}
-              />
+              >
+                <BlockFieldDispatcher index={index} />{" "}
+              </BlockFieldBox>
             ))}
           </SortableContext>
         </DndContext>
@@ -607,7 +611,7 @@ const BlockFieldBox: React.FC<
     index: number;
     id: string;
   }>
-> = ({ id, remove, index }) => {
+> = ({ id, remove, index, children }) => {
   const { watch } = useFormContext<Article>();
   const bodyType = watch(`body.${index}.type`);
   const {
@@ -652,20 +656,20 @@ const BlockFieldBox: React.FC<
           <FontAwesomeIcon icon={faTrash} className={"w-4 h-4 text-indigo"} />
         </button>
       </Flexbox>
-      {isSorting ? null : (
-        <BlockFieldDispatcher type={bodyType} index={index} />
-      )}
+      {isSorting ? null : children}
     </div>
   );
 };
 
 const BlockFieldDispatcher: React.FC<
   PropsWithChildren<{
-    type: ArticleBody["type"];
     index: number;
   }>
-> = ({ type, index }) => {
-  switch (type) {
+> = ({ index }) => {
+  const { watch } = useFormContext<Article>();
+  const bodyType = watch(`body.${index}.type`);
+
+  switch (bodyType) {
     case "tag":
       return <TagField index={index} />;
     case "h1":
@@ -712,17 +716,22 @@ const ArrayStringField: React.FC<{
   title?: string;
   value: Array<string>;
   onChange: (value: Array<string>) => void;
-  error: unknown;
-}> = ({ title = "Content", value, onChange }) => {
+  error?: unknown;
+  useTextarea?: boolean;
+}> = ({ title = "Content", value, onChange, useTextarea, error }) => {
   const [innerValue, setInnerValue] = useState<Array<string>>(value);
+
+  useEffectOnce(() => {
+    setInnerValue(value);
+  });
 
   useUpdateEffect(() => {
     onChange(innerValue);
   }, [innerValue]);
 
   const append = useCallback(() => {
-    onChange([...value, "這是第N行"]);
-  }, [value]);
+    setInnerValue((prev) => [...prev, "這是第N行"]);
+  }, []);
 
   const remove = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
     (event) => {
@@ -735,7 +744,7 @@ const ArrayStringField: React.FC<{
   );
 
   const onSubValueChange = useCallback<
-    React.ChangeEventHandler<HTMLInputElement>
+    React.ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement>
   >((event) => {
     const subValue = event.currentTarget.value;
     const index = event.currentTarget.dataset.index;
@@ -762,14 +771,19 @@ const ArrayStringField: React.FC<{
         </Flexbox>
       </FieldTitle>
       <div className={"space-y-2"}>
-        {value.map((text, index) => (
-          <Flexbox align={"center"} key={`text-${index}`} className={"w-full"}>
+        {innerValue.map((text, index) => (
+          <Flexbox align={"center"} key={index} className={"w-full"}>
             <div className={"flex-1"}>
               <Input
                 value={text}
                 data-index={index}
                 onChange={onSubValueChange}
-                error={isRestrictedEmptyString(text) ? "Required" : undefined}
+                error={
+                  isRestrictedEmptyString(text) ?? error
+                    ? "Required"
+                    : undefined
+                }
+                type={useTextarea ? "textarea" : "input"}
               />
             </div>
             {value.length > 1 && (
@@ -817,8 +831,7 @@ const HeadingField: React.FC<{
 const BodyField: React.FC<{
   index: number;
 }> = ({ index }) => {
-  const { control, register } =
-    useFormContext<ArticleWithSpecificBodyType<"body">>();
+  const { control } = useFormContext<ArticleWithSpecificBodyType<"body">>();
   const {
     field: { value, onChange },
     formState: { errors },
@@ -829,25 +842,8 @@ const BodyField: React.FC<{
       validate: stringOfArrayRequiredValidate,
     },
   });
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: `body.${index}.hypertext`,
-  });
 
   const contentError = errors?.["body"]?.[index]?.["content"];
-
-  const onAppendClick = useCallback(() => {
-    append({ keyword: "這是關鍵字", href: "https://..." });
-  }, [append]);
-
-  const onRemoveClick = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
-    (event) => {
-      const index = event.currentTarget.dataset.index;
-      if (!index) return;
-      remove(Number(index));
-    },
-    [remove],
-  );
 
   return (
     <div className={"space-y-2"}>
@@ -855,67 +851,144 @@ const BodyField: React.FC<{
         value={value}
         onChange={onChange}
         error={contentError}
+        useTextarea
       />
-      <div>
-        <FieldTitle isRequired={false}>
-          Hypertext{" "}
-          <Flexbox
-            as={"button"}
-            type={"button"}
-            className={"ml-1"}
-            onClick={onAppendClick}
-          >
-            <FontAwesomeIcon icon={faPlus} className={"w-3 h-3 text-primary"} />
-          </Flexbox>
-        </FieldTitle>
-        <div className={"space-y-1"}>
-          {fields.map((field, subIndex) => (
-            <Flexbox key={field.id} align={"start"}>
+      <BodyHypertextField index={index} />
+    </div>
+  );
+};
+
+const BodyHypertextField: React.FC<{
+  index: number;
+}> = ({ index }) => {
+  const [hypertext, setHypertext] = useState<
+    Array<
+      NonNullable<GetArticleBodyByType<"body">["hypertext"]>[number] & {
+        id: string;
+      }
+    >
+  >([]);
+
+  const { control, setError, clearErrors } =
+    useFormContext<ArticleWithSpecificBodyType<"body">>();
+  const {
+    field: { value, onChange },
+    fieldState: { error },
+  } = useController({
+    name: `body.${index}.hypertext`,
+    control,
+    rules: {
+      validate: (value) => {
+        if (isEmptyArray(value)) return undefined;
+        return value?.some(
+          ({ keyword, href }) =>
+            isRestrictedEmptyString(keyword) || urlValidate(href),
+        )
+          ? "Required"
+          : undefined;
+      },
+    },
+  });
+
+  useEffectOnce(() => {
+    setHypertext(
+      value?.map((_) => ({ id: uuidv4(), keyword: "", href: "" })) ?? [],
+    );
+  });
+
+  useUpdateEffect(() => {
+    onChange(hypertext);
+  }, [hypertext]);
+
+  const onAppendClick = useCallback(() => {
+    setHypertext((prev) => [...prev, { id: uuidv4(), keyword: "", href: "" }]);
+  }, []);
+
+  const onRemoveClick = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
+    (event) => {
+      const id = event.currentTarget.id;
+      if (!id) return;
+      setHypertext((prev) => prev.filter((field) => field.id !== id));
+    },
+    [],
+  );
+
+  const onInputChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+    (event) => {
+      const index = event.currentTarget.dataset.index;
+      const name = event.currentTarget.dataset
+        .name as keyof (typeof hypertext)[number];
+      const value = event.currentTarget.value;
+      if (!index) return;
+      setHypertext((prev) => {
+        const next = [...prev];
+        next[Number(index)][name] = value;
+        return next;
+      });
+    },
+    [],
+  );
+
+  return (
+    <div>
+      <FieldTitle isRequired={false}>
+        Hypertext{" "}
+        <Flexbox
+          as={"button"}
+          type={"button"}
+          className={"ml-1"}
+          onClick={onAppendClick}
+        >
+          <FontAwesomeIcon icon={faPlus} className={"w-3 h-3 text-primary"} />
+        </Flexbox>
+      </FieldTitle>
+      <div className={"space-y-1"}>
+        {hypertext.map((field, subIndex) => (
+          <Flexbox key={field.id} align={"start"}>
+            <Flexbox
+              as={"p"}
+              align={"center"}
+              className={"w-15 text-fz-8-mobile leading-[38px] text-gray-3"}
+            >
+              Set {subIndex}
               <Flexbox
-                as={"p"}
-                align={"center"}
-                className={"w-15 text-fz-8-mobile leading-[38px] text-gray-3"}
+                id={field.id}
+                as={"button"}
+                type={"button"}
+                className={"ml-1"}
+                data-index={subIndex}
+                onClick={onRemoveClick}
               >
-                Set {subIndex}
-                <Flexbox
-                  as={"button"}
-                  type={"button"}
-                  className={"ml-1"}
-                  data-index={subIndex}
-                  onClick={onRemoveClick}
-                >
-                  <FontAwesomeIcon
-                    icon={faTimes}
-                    className={"w-3 h-3 text-primary"}
-                  />
-                </Flexbox>
+                <FontAwesomeIcon
+                  icon={faTimes}
+                  className={"w-3 h-3 text-primary"}
+                />
               </Flexbox>
-              <div className={"space-y-1 flex-1"}>
-                <Input
-                  error={
-                    errors?.["body"]?.[index]?.["hypertext"]?.[subIndex]?.[
-                      "keyword"
-                    ]
-                  }
-                  {...register(`body.${index}.hypertext.${subIndex}.keyword`, {
-                    required: true,
-                  })}
-                />
-                <Input
-                  error={
-                    errors?.["body"]?.[index]?.["hypertext"]?.[subIndex]?.[
-                      "href"
-                    ]
-                  }
-                  {...register(`body.${index}.hypertext.${subIndex}.href`, {
-                    required: true,
-                    validate: urlValidate,
-                  })}
-                />
-              </div>
             </Flexbox>
-          ))}
-        </div>
+            <div className={"space-y-1 flex-1"}>
+              <Input
+                data-index={subIndex}
+                data-name={"keyword"}
+                value={field.keyword}
+                onChange={onInputChange}
+                error={
+                  error && isRestrictedEmptyString(field.keyword)
+                    ? "Required"
+                    : undefined
+                }
+              />
+              <Input
+                data-index={subIndex}
+                data-name={"href"}
+                value={field.href}
+                onChange={onInputChange}
+                error={
+                  error && urlValidate(field.href) ? "Required" : undefined
+                }
+              />
+            </div>
+          </Flexbox>
+        ))}
       </div>
     </div>
   );

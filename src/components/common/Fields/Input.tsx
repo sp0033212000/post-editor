@@ -1,27 +1,36 @@
-import React, { forwardRef, useCallback, useRef } from "react";
+import React, {
+  forwardRef,
+  PropsWithChildren,
+  useCallback,
+  useRef,
+} from "react";
+import { FieldPath, useController, UseControllerProps } from "react-hook-form";
 
 import classNames from "classnames";
+import { FieldValues } from "react-hook-form/dist/types/fields";
 
 import { isNotSet, isSet } from "@src/utils";
 
 import Flexbox from "@src/components/common/Flexbox";
 
+type InputType = (
+  | (ElementProps<"input"> & { type?: undefined | "input" })
+  | (ElementProps<"textarea"> & { type: "textarea" })
+) & {
+  leftSlot?: React.ReactElement;
+  rightSlot?: React.ReactElement;
+  inputWrapperClassname?: string;
+  outerWrapperClassname?: string;
+  error?: unknown;
+  withBorder?: boolean;
+  disabledPadding?: boolean;
+  digitOnly?: boolean;
+  serializer?: (value: string) => string;
+};
+
 export const Input = forwardRef<
   HTMLInputElement | HTMLTextAreaElement,
-  (
-    | (ElementProps<"input"> & { type?: undefined | "input" })
-    | (ElementProps<"textarea"> & { type: "textarea" })
-  ) & {
-    leftSlot?: React.ReactElement;
-    rightSlot?: React.ReactElement;
-    inputWrapperClassname?: string;
-    outerWrapperClassname?: string;
-    error?: unknown;
-    withBorder?: boolean;
-    disabledPadding?: boolean;
-    digitOnly?: boolean;
-    serializer?: (value: string) => string;
-  }
+  InputType
 >(
   (
     {
@@ -99,3 +108,47 @@ export const Input = forwardRef<
     );
   },
 );
+
+interface ControllableComponent extends CustomizeFunctionComponent {
+  <TFormValues extends FieldValues, Name extends FieldPath<TFormValues>>(
+    props: PropsWithChildren<
+      UseControllerProps<TFormValues, Name> & Omit<InputType, "ref">
+    >,
+    context?: any,
+  ): React.ReactElement | null;
+}
+
+export const ControllableInput: ControllableComponent = ({
+  control,
+  name,
+  rules,
+  shouldUnregister,
+  defaultValue,
+  disabled,
+  className,
+  as = "input",
+  ...props
+}) => {
+  const {
+    field,
+    fieldState: { error },
+  } = useController({
+    control,
+    name,
+    rules,
+    shouldUnregister,
+    defaultValue,
+    disabled,
+  });
+
+  return (
+    // @ts-ignore
+    <Input
+      as={as}
+      {...props}
+      {...field}
+      className={classNames(className)}
+      error={error}
+    />
+  );
+};

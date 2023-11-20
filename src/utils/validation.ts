@@ -7,7 +7,7 @@ export const stringOfArrayRequiredValidate = (value: Array<string>) => {
   return undefined;
 };
 
-export const urlValidate = (value: string) => {
+export const urlValidate = (value: string = "") => {
   try {
     new URL(value);
     return undefined;

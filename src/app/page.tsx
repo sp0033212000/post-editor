@@ -42,7 +42,6 @@ import classNames from "classnames";
 import Image from "next/image";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { UseFieldArrayAppend } from "react-hook-form/dist/types/fieldArray";
-import { v4 as uuidV4 } from "uuid";
 
 import {
   stringOfArrayRequiredValidate,
@@ -53,14 +52,17 @@ import {
   Article,
   ArticleBody,
   ArticleWithSpecificBodyType,
-  GetArticleBodyByType,
   GetArticleBodyIncludeTypeByType,
   QATalkCategory,
   qaTalkCategoryOptions,
 } from "@src/constant";
 import { isEmptyArray, isRestrictedEmptyString } from "@src/utils";
 
-import { Input, Select } from "@src/components/common/Fields";
+import {
+  ControllableInput,
+  Input,
+  Select,
+} from "@src/components/common/Fields";
 import Flexbox from "@src/components/common/Flexbox";
 import Modal from "@src/components/common/Modal";
 
@@ -861,19 +863,16 @@ const BodyField: React.FC<{
 const BodyHypertextField: React.FC<{
   index: number;
 }> = ({ index }) => {
-  const [hypertext, setHypertext] = useState<
-    Array<
-      NonNullable<GetArticleBodyByType<"body">["hypertext"]>[number] & {
-        id: string;
-      }
-    >
-  >([]);
+  // const [hypertext, setHypertext] = useState<
+  //   Array<
+  //     NonNullable<GetArticleBodyByType<"body">["hypertext"]>[number] & {
+  //       id: string;
+  //     }
+  //   >
+  // >([]);
 
   const { control } = useFormContext<ArticleWithSpecificBodyType<"body">>();
-  const {
-    field: { value, onChange },
-    fieldState: { error },
-  } = useController({
+  const { fields, append, remove } = useFieldArray({
     name: `body.${index}.hypertext`,
     control,
     rules: {
@@ -889,43 +888,17 @@ const BodyHypertextField: React.FC<{
     },
   });
 
-  useEffectOnce(() => {
-    setHypertext(
-      value?.map((_) => ({ id: uuidV4(), keyword: "", href: "" })) ?? [],
-    );
-  });
-
-  useUpdateEffect(() => {
-    onChange(hypertext);
-  }, [hypertext]);
-
   const onAppendClick = useCallback(() => {
-    setHypertext((prev) => [...prev, { id: uuidV4(), keyword: "", href: "" }]);
-  }, []);
+    append({ keyword: "", href: "" });
+  }, [append]);
 
   const onRemoveClick = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
     (event) => {
-      const id = event.currentTarget.id;
-      if (!id) return;
-      setHypertext((prev) => prev.filter((field) => field.id !== id));
-    },
-    [],
-  );
-
-  const onInputChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-    (event) => {
       const index = event.currentTarget.dataset.index;
-      const name = event.currentTarget.dataset
-        .name as keyof (typeof hypertext)[number];
-      const value = event.currentTarget.value;
       if (!index) return;
-      setHypertext((prev) => {
-        const next = [...prev];
-        next[Number(index)][name] = value;
-        return next;
-      });
+      remove(Number(index));
     },
-    [],
+    [remove],
   );
 
   return (
@@ -942,7 +915,7 @@ const BodyHypertextField: React.FC<{
         </Flexbox>
       </FieldTitle>
       <div className={"space-y-1"}>
-        {hypertext.map((field, subIndex) => (
+        {fields?.map((field, subIndex) => (
           <Flexbox key={field.id} align={"start"}>
             <Flexbox
               as={"p"}
@@ -965,25 +938,25 @@ const BodyHypertextField: React.FC<{
               </Flexbox>
             </Flexbox>
             <div className={"space-y-1 flex-1"}>
-              <Input
+              <ControllableInput
                 data-index={subIndex}
                 data-name={"keyword"}
-                value={field.keyword}
-                onChange={onInputChange}
-                error={
-                  error && isRestrictedEmptyString(field.keyword)
-                    ? "Required"
-                    : undefined
-                }
+                control={control}
+                name={`body.${index}.hypertext.${subIndex}.keyword`}
+                rules={{
+                  required: true,
+                }}
               />
-              <Input
+              <ControllableInput
                 data-index={subIndex}
                 data-name={"href"}
-                value={field.href}
-                onChange={onInputChange}
-                error={
-                  error && urlValidate(field.href) ? "Required" : undefined
-                }
+                control={control}
+                name={`body.${index}.hypertext.${subIndex}.href`}
+                rules={{
+                  required: true,
+                  // @ts-ignore
+                  validate: urlValidate,
+                }}
               />
             </div>
           </Flexbox>

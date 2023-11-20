@@ -71,7 +71,7 @@ export const Body: React.FC<GetArticleBodyByType<"body">> = ({
       );
     });
     return compoundContent.split(/(\{\{hypertext:\d}}+)/g);
-  }, [content, hypertext]);
+  }, [JSON.stringify({ content, hypertext })]);
 
   return (
     <div className={"mt-4 md:mt-8"}>

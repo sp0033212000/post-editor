@@ -205,9 +205,9 @@ export const Hyperlink: React.FC<{
         "underline",
       )}
     >
-      {content.map(({ title, href }) => (
+      {content.map(({ title, href }, index) => (
         <a
-          key={title}
+          key={`${title}_${index}`}
           target={"_blank"}
           rel={"noreferrer noopener"}
           href={href}
@@ -233,7 +233,7 @@ export const PostList: React.FC<{
       {content.map((item, index) => (
         <Flexbox
           as={"li"}
-          key={item}
+          key={`${item}_${index}`}
           className={classNames(
             "mt-4",
             "list-inside",

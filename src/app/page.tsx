@@ -161,6 +161,7 @@ const Drawer = () => {
   } = useFormContext<Article>();
 
   const onSubmit = useCallback<SubmitHandler<Article>>((data) => {
+    console.log("Submitting...");
     const json = JSON.stringify(data, null, 2);
     // Save to plain text file (txt)
     const blob = new Blob([json], { type: "text/plain;charset=utf-8" });
@@ -169,13 +170,14 @@ const Drawer = () => {
     link.href = url;
     link.download = `${data.id}.txt`;
     link.click();
+    link.remove();
   }, []);
 
   return (
     <React.Fragment>
       <Flexbox
         as={"form"}
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit(onSubmit, console.error)}
         direction={"column"}
         className={classNames(
           "fixed left-0 top-0",
@@ -863,14 +865,6 @@ const BodyField: React.FC<{
 const BodyHypertextField: React.FC<{
   index: number;
 }> = ({ index }) => {
-  // const [hypertext, setHypertext] = useState<
-  //   Array<
-  //     NonNullable<GetArticleBodyByType<"body">["hypertext"]>[number] & {
-  //       id: string;
-  //     }
-  //   >
-  // >([]);
-
   const { control } = useFormContext<ArticleWithSpecificBodyType<"body">>();
   const { fields, append, remove } = useFieldArray({
     name: `body.${index}.hypertext`,

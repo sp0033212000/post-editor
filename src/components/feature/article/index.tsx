@@ -11,7 +11,7 @@ import {
   QA_TALK_CATEGORY_LABEL,
   QATalkCategory,
 } from "@src/constant/qa-talk";
-import { isSet } from "@src/utils";
+import { isEmptyString, isSet } from "@src/utils";
 
 import Flexbox from "@src/components/common/Flexbox";
 
@@ -65,6 +65,7 @@ export const Body: React.FC<GetArticleBodyByType<"body">> = ({
     // Replace the keyword in the content with the keyword in hypertext to the anchor tag
     let compoundContent = content.join("\n");
     hypertext?.forEach(({ keyword, href }, index) => {
+      if (isEmptyString(keyword)) return;
       compoundContent = compoundContent.replace(
         new RegExp(keyword, "g"),
         `{{hypertext:${index}}}`,
